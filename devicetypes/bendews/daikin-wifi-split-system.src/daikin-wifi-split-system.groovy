@@ -17,6 +17,7 @@
  *	Changelog:
  *
  *  1.0 (06/01/2018) - Initial 1.0 Release. All Temperature, Mode and Fan functions working.
+ *  1.1 (06/01/2018) - Allow user to change device icon.
  *
  */
 
@@ -89,7 +90,7 @@ metadata {
 	tiles(scale:2) {
 
         // Main Tile
-        multiAttributeTile(name:"thermostatGeneric", type:"generic", width:6, height:4) {
+        multiAttributeTile(name:"thermostatGeneric", type:"generic", width:6, height:4, canChangeIcon: true) {
             tileAttribute("device.temperature", key: "PRIMARY_CONTROL") {
                 attributeState("temp", label:'${currentValue}°', unit:"dF", defaultState: true, backgroundColors: [
                 // Celsius
@@ -373,7 +374,6 @@ def installed() {
     sendEvent(name:'fanDirection', value:'3D', displayed:false)
     sendEvent(name:'fanState', value:'off', displayed:false)
 }
-// -------
 // -------
 
 
