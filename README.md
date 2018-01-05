@@ -12,9 +12,10 @@ Note that "P" Series units (FTXMxxP) do not support fan direction or rate contro
 ## To Install
 
 Either copy the device handler directly in to the IDE, or add the repo:
-**Owner:** bendews
-**Name:** smartthings-daikin-wifi
-**Branch:** master
+
+- **Owner:** bendews
+- **Name:** smartthings-daikin-wifi
+- **Branch:** master
 
 Once the Device Handler has been added, we can then add a virtual device via the IDE:
 
@@ -36,9 +37,9 @@ Once created, we can then open the settings for the device, and fill out the fol
 
 ![Preview of device settings in SmartThings interface](https://raw.githubusercontent.com/bendews/smartthings-daikin-wifi/master/settings.png)
 
-**Daikin WiFi IP Address:** The IP address of the WiFi unit
-**Daikin WiFi Port:** Ensure this is set to 80 if you are not sure
-**Refresh Interval in minutes:** The device will refresh automatically when tasks are triggered by SmartThings, however if it is being controlled by other means (I.E a remote), the state will go out of sync. This setting will refresh the device information on a set interval. 10 minutes or higher is strongly reccomended.
+- **Daikin WiFi IP Address:** The IP address of the WiFi unit
+- **Daikin WiFi Port:** Ensure this is set to 80 if you are not sure
+- **Refresh Interval in minutes:** The device will refresh automatically when tasks are triggered by SmartThings, however if it is being controlled by other means (I.E a remote), the state will go out of sync. This setting will refresh the device information on a set interval. 10 minutes or higher is strongly reccomended.
 
 # License
 [MIT](https://github.com/bendews/smartthings-daikin-wifi/master/LICENSE)
