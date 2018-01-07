@@ -1,6 +1,6 @@
 /**
  *  Daikin WiFi Split System
- *  V 1.1 - 06/01/2018
+ *  V 1.2 - 07/01/2018
  *
  *  Copyright 2018 Ben Dews - https://bendews.com
  *
@@ -18,6 +18,7 @@
  *
  *  1.0 (06/01/2018) - Initial 1.0 Release. All Temperature, Mode and Fan functions working.
  *  1.1 (06/01/2018) - Allow user to change device icon.
+ *  1.2 (07/01/2018) - Fixed issue preventing user from setting desired temperature, added switch and temperature capabilities
  *
  */
 
@@ -54,10 +55,15 @@ import groovy.transform.Field
 metadata {
     definition (name: "Daikin WiFi Split System", namespace: "bendews", author: "contact@bendews.com") {
         capability "Thermostat"
+        capability "Temperature Measurement"
+        capability "Actuator"
+        capability "Switch"
+        capability "Sensor"
         capability "Refresh"
         capability "Polling"
 
         attribute "targetTemp", "number"
+        attribute "currMode", "string"
         attribute "fanAPISupport", "string"
         attribute "fanRate", "string"
         attribute "fanDirection", "string"
@@ -368,6 +374,7 @@ def installed() {
     sendEvent(name:'coolingSetpoint', value:'28', displayed:false)
     sendEvent(name:'targetTemp', value:'28', displayed:false)
     sendEvent(name:'thermostatMode', value:'off', displayed:false)
+    sendEvent(name:'currMode', value:'cool', displayed:false)
     sendEvent(name:'thermostatFanMode', value:'auto', displayed:false)
     sendEvent(name:'thermostatOperatingState', value:'idle', displayed:false)
     sendEvent(name:'fanRate', value:'auto', displayed:false)
@@ -388,6 +395,7 @@ def parse(String description) {
     // Custom definitions
     def events = []
     def turnedOff = false
+    def currMode = null
     def modeVal = null
     def targetTempVal = null
     // Define return field data we are interested in
@@ -410,9 +418,11 @@ def parse(String description) {
     //  Get mode info
     if (deviceMode){
         // log.debug "mode: ${deviceMode}"
+        currMode = DAIKIN_MODES.get(deviceMode.toString())
         if (!turnedOff) {
-            modeVal = DAIKIN_MODES.get(deviceMode.toString())
+            modeVal = currMode
         }
+        events.add(createEvent(name: "currMode", value: currMode))
     }
     //  Get inside temperature sensor info
     if (deviceInsideTempSensor){
@@ -583,6 +593,15 @@ def heat() {
 def fan() {
     log.debug "Executing 'fan'"
     updateEvents(mode: "fan", updateDevice: true)
+}
+// -------
+
+
+// Switch Functions ----
+def on(){
+    log.debug "Executing 'on'"
+    def currMode = device.currentValue("currMode")
+    updateEvents(mode: currMode, updateDevice: true)
 }
 
 def off() {
