@@ -537,6 +537,12 @@ def setThermostatMode(String newMode) {
     }
 }
 
+
+def setTemperature(Double value) {
+    log.debug "Executing 'setTemperature' with ${value}"
+    updateEvents(temperature: value, updateDevice: true)
+}
+
 def setHeatingSetpoint(Double value) {
     log.debug "Executing 'setHeatingSetpoint' with ${value}"
     updateEvents(temperature: value, updateDevice: true)
