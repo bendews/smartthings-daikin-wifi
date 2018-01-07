@@ -62,6 +62,7 @@ metadata {
         capability "Refresh"
         capability "Polling"
 
+        attribute "outsideTemp", "number"
         attribute "targetTemp", "number"
         attribute "currMode", "string"
         attribute "fanAPISupport", "string"
@@ -86,7 +87,7 @@ metadata {
     preferences {
         input("ipAddress", "string", title:"Daikin WiFi IP Address", required:true, displayDuringSetup:true)
         input("ipPort", "string", title:"Daikin WiFi Port (default: 80)", defaultValue:80, required:true, displayDuringSetup:true)
-        input("refreshInterval", "enum", title: "Refresh Interval in minutes", defaultValue: "5", required:true, displayDuringSetup:true, options: ["5","10","15","30"])
+        input("refreshInterval", "enum", title: "Refresh Interval in minutes", defaultValue: "10", required:true, displayDuringSetup:true, options: ["5","10","15","30"])
     }
 
     simulator {
@@ -176,6 +177,19 @@ metadata {
             state "fan", label:'Fan', icon:"st.Appliances.appliances11", backgroundColor:"#00A0DC", action:"thermostat.off"
         }
 
+        // Outside Temp
+		valueTile("outsideTemp", "device.outsideTemp", width:2, height:2, inactiveLabel: false) {
+			state("val", label:'Outside: ${currentValue}°', backgroundColors:[
+                [value: 0, color: "#153591"],
+                [value: 7, color: "#1e9cbb"],
+                [value: 15, color: "#90d2a7"],
+                [value: 23, color: "#44b621"],
+                [value: 28, color: "#f1d801"],
+                [value: 35, color: "#d04e00"],
+                [value: 37, color: "#bc2323"]
+				])
+		}
+
         // Refresh       
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width:2, height:2) {
             state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
@@ -197,6 +211,7 @@ metadata {
             "modeAuto",
             "modeFan",
             "modeDry",
+            "outsideTemp",
             "refresh"])
     }
 }
@@ -373,6 +388,7 @@ def installed() {
     sendEvent(name:'heatingSetpoint', value:'18', displayed:false)
     sendEvent(name:'coolingSetpoint', value:'28', displayed:false)
     sendEvent(name:'targetTemp', value:'28', displayed:false)
+    sendEvent(name:'outsideTemp', value:'20', displayed:false)
     sendEvent(name:'thermostatMode', value:'off', displayed:false)
     sendEvent(name:'currMode', value:'cool', displayed:false)
     sendEvent(name:'thermostatFanMode', value:'auto', displayed:false)
@@ -402,7 +418,7 @@ def parse(String description) {
     def devicePower = daikinResp.get("pow", null)
     def deviceMode = daikinResp.get("mode", null)
     def deviceInsideTempSensor = daikinResp.get("htemp", null)
-    def deviceOutsideTempSensor = daikinResp.get("htemp", null)
+    def deviceOutsideTempSensor = daikinResp.get("otemp", null)
     def deviceTargetTemp = daikinResp.get("stemp", null)
     def devicefanRate = daikinResp.get("f_rate", null)
     def devicefanDirection = daikinResp.get("f_dir", null)
@@ -428,6 +444,11 @@ def parse(String description) {
     if (deviceInsideTempSensor){
         // log.debug "htemp: ${deviceInsideTempSensor}"
         events.add(createEvent(name: "temperature", value: deviceInsideTempSensor))
+    }
+    //  Get outside temperature sensor info
+    if (deviceOutsideTempSensor){
+        // log.debug "otemp: ${deviceOutsideTempSensor}"
+        events.add(createEvent(name: "outsideTemp", value: deviceOutsideTempSensor))
     }
     //  Get currently set target temperature
     if (deviceTargetTemp){
