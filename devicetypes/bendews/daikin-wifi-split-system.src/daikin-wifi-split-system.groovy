@@ -217,17 +217,18 @@ metadata {
 }
 
 // Generic Private Functions -------
-private generateDNI(String ipAddress, String port){
-    log.debug "Generating DNI"
-    String ipHex = ipAddress.tokenize( '.' ).collect {  String.format( '%02X', it.toInteger() ) }.join()
-    String portHex = String.format( '%04X', port.toInteger() )
-    return ipHex + ":" + portHex
-}
-
 private getHostAddress() {
     def ip = settings.ipAddress
     def port = settings.ipPort
     return ip + ":" + port
+}
+
+private getDNI(String ipAddress, String port){
+    log.debug "Generating DNI"
+    String ipHex = ipAddress.tokenize( '.' ).collect {  String.format( '%02X', it.toInteger() ) }.join()
+    String portHex = String.format( '%04X', port.toInteger() )
+    String newDNI = ipHex + ":" + portHex
+    return newDNI
 }
 
 private apiGet(def apiCommand) {
@@ -347,6 +348,13 @@ private startScheduledRefresh() {
     }
 }
 
+def setDNI(){
+    log.debug "Setting DNI"
+    String ip = settings.ipAddress
+    String port = settings.ipPort
+    String newDNI = getDNI(ip, port)
+    device.setDeviceNetworkId("${newDNI}")
+}
 def updated() {
     log.debug "Updated with settings: ${settings}"
     def lastUpdated = state.updated ? state.updated : (now() - 6000)
