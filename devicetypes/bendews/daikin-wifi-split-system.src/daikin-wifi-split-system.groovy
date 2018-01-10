@@ -355,26 +355,17 @@ def setDNI(){
     String newDNI = getDNI(ip, port)
     device.setDeviceNetworkId("${newDNI}")
 }
+
 def updated() {
     log.debug "Updated with settings: ${settings}"
-    def lastUpdated = state.updated ? state.updated : (now() - 6000)
     // Prevent function from running twice on save
-    if ((now() - lastUpdated) < 5000){
+    if (!state.updated || now() >= state.updated + 5000){
+        // Unschedule existing tasks
         unschedule()
-        String ipAddress = settings.ipAddress
-        if (!ipAddress) {
-            log.warn "IP address is not set!"
-            return
-        }
-        String ipPort = settings.ipPort
-        if (!ipPort) {
-            log.warn "Using default TCP port 80!"
-            ipPort = "80"
-        }
-        def dni = generateDNI(ipAddress, ipPort)
-        device.deviceNetworkId = dni
-        state.hostAddress = getHostAddress()
-        // Start scheduled refresh
+        // Set DNI
+        runIn(1, setDNI)
+        runIn(5, refresh)
+        // Start scheduled task
         startScheduledRefresh()
     }
     state.updated = now()
