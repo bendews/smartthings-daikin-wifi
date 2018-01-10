@@ -274,7 +274,9 @@ private updateDaikinDevice(Boolean turnOff = false){
     def fDir = "&f_dir=3"
 
     // Current mode selected in smartthings
-    def currentMode = device.currentState("thermostatMode")?.value
+    // If turning unit off, get current mode of unit instead of desired mode
+    String modeAttr = turnOff ? "currMode" : "thermostatMode"
+    def currentMode = device.currentState(modeAttr)?.value
     // Convert textual mode (e.g "cool") to Daikin Code (e.g "3")
     def currentModeKey = DAIKIN_MODES.find{ it.value == currentMode }?.key
 
