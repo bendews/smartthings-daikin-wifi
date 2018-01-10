@@ -1,6 +1,6 @@
 /**
  *  Daikin WiFi Split System
- *  V 1.2 - 07/01/2018
+ *  V 1.3 - 10/01/2018
  *
  *  Copyright 2018 Ben Dews - https://bendews.com
  *
@@ -19,6 +19,8 @@
  *  1.0 (06/01/2018) - Initial 1.0 Release. All Temperature, Mode and Fan functions working.
  *  1.1 (06/01/2018) - Allow user to change device icon.
  *  1.2 (07/01/2018) - Fixed issue preventing user from setting desired temperature, added switch and temperature capabilities
+ *  1.3 (10/01/2018) - Added support for outside temperature value, 1 minute refresh option (not reccomended) and fixed thermostat and switch state reporting when turned off
+ *
  *
  */
 
@@ -178,8 +180,8 @@ metadata {
         }
 
         // Outside Temp
-		valueTile("outsideTemp", "device.outsideTemp", width:2, height:2, inactiveLabel: false) {
-			state("val", label:'Outside: ${currentValue}°', backgroundColors:[
+        valueTile("outsideTemp", "device.outsideTemp", width:2, height:2, inactiveLabel: false) {
+            state("val", label:'Outside: ${currentValue}°', backgroundColors:[
                 [value: 0, color: "#153591"],
                 [value: 7, color: "#1e9cbb"],
                 [value: 15, color: "#90d2a7"],
@@ -187,8 +189,8 @@ metadata {
                 [value: 28, color: "#f1d801"],
                 [value: 35, color: "#d04e00"],
                 [value: 37, color: "#bc2323"]
-				])
-		}
+                ])
+        }
 
         // Refresh       
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width:2, height:2) {
