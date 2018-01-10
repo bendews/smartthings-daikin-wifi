@@ -274,7 +274,9 @@ private updateDaikinDevice(Boolean turnOff = false){
     def fDir = "&f_dir=3"
 
     // Current mode selected in smartthings
-    def currentMode = device.currentState("thermostatMode")?.value
+    // If turning unit off, get current mode of unit instead of desired mode
+    String modeAttr = turnOff ? "currMode" : "thermostatMode"
+    def currentMode = device.currentState(modeAttr)?.value
     // Convert textual mode (e.g "cool") to Daikin Code (e.g "3")
     def currentModeKey = DAIKIN_MODES.find{ it.value == currentMode }?.key
 
@@ -387,18 +389,18 @@ def refresh() {
 
 def installed() {
     log.debug "installed()"
-    sendEvent(name:'temperature', value:'20', displayed:false)
-    sendEvent(name:'heatingSetpoint', value:'18', displayed:false)
-    sendEvent(name:'coolingSetpoint', value:'28', displayed:false)
-    sendEvent(name:'targetTemp', value:'28', displayed:false)
-    sendEvent(name:'outsideTemp', value:'20', displayed:false)
-    sendEvent(name:'thermostatMode', value:'off', displayed:false)
-    sendEvent(name:'currMode', value:'cool', displayed:false)
-    sendEvent(name:'thermostatFanMode', value:'auto', displayed:false)
+    sendEvent(name:'heatingSetpoint', value: '18', displayed:false)
+    sendEvent(name:'coolingSetpoint', value: '28', displayed:false)
+    sendEvent(name:'temperature', value: null, displayed:false)
+    sendEvent(name:'targetTemp', value: null, displayed:false)
     sendEvent(name:'thermostatOperatingState', value:'idle', displayed:false)
-    sendEvent(name:'fanRate', value:'auto', displayed:false)
-    sendEvent(name:'fanDirection', value:'3D', displayed:false)
-    sendEvent(name:'fanState', value:'off', displayed:false)
+    sendEvent(name:'outsideTemp', value: null, displayed:false)
+    sendEvent(name:'currMode', value: null, displayed:false)
+    sendEvent(name:'thermostatMode', value: null, displayed:false)
+    sendEvent(name:'thermostatFanMode', value: null, displayed:false)
+    sendEvent(name:'fanRate', value: null, displayed:false)
+    sendEvent(name:'fanDirection', value: null, displayed:false)
+    sendEvent(name:'fanState', value: null, displayed:false)
 }
 // -------
 
