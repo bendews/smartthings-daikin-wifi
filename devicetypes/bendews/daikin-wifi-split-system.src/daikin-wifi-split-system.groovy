@@ -535,6 +535,12 @@ private updateEvents(Map args){
             break
     }
 
+    if (turnOff){
+        events.add(sendEvent(name: "switch", value: "off", displayed: false))
+    } else {
+        events.add(sendEvent(name: "switch", value: "on", displayed: false))
+    }
+
     if (updateDevice){
         updateDaikinDevice(turnOff)
     }
