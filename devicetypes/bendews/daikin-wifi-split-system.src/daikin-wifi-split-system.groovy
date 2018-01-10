@@ -492,43 +492,45 @@ private updateEvents(Map args){
     // Smarthings thermostat handles "Off" as another mode
     // Work around this by defining a "turnOff" boolean and set where appropiate
     Boolean turnOff = false
+    def events = []
     if (!mode){
         mode = device.currentValue("thermostatMode")
     } else {
-        sendEvent(name: "thermostatMode", value: mode)
+        events.add(sendEvent(name: "thermostatMode", value: mode))
     }
     if (!temperature){
         temperature = device.currentValue("targetTemp")
     }
     switch(mode) {
         case "fan":
-            sendEvent(name: "statusText", value: "Fan Mode", displayed: false)
-            sendEvent(name: "thermostatOperatingState", value: "fan only", displayed: false)
-            sendEvent(name: "targetTemp", value: null)
+            events.add(sendEvent(name: "statusText", value: "Fan Mode", displayed: false))
+            events.add(sendEvent(name: "thermostatOperatingState", value: "fan only", displayed: false))
+            events.add(sendEvent(name: "targetTemp", value: null))
             break
         case "dry":
-            sendEvent(name: "statusText", value: "Dry Mode", displayed: false)
-            sendEvent(name: "thermostatOperatingState", value: "fan only", displayed: false)
-            sendEvent(name: "targetTemp", value: null)
+            events.add(sendEvent(name: "statusText", value: "Dry Mode", displayed: false))
+            events.add(sendEvent(name: "thermostatOperatingState", value: "fan only", displayed: false))
+            events.add(sendEvent(name: "targetTemp", value: null))
             break
         case "heat":
-            sendEvent(name: "statusText", value: "Heating to ${temperature}°", displayed: false)
-            sendEvent(name: "thermostatOperatingState", value: "heating", displayed: false)
-            sendEvent(name: "heatingSetpoint", value: temperature, displayed: false)
-            sendEvent(name: "targetTemp", value: temperature)
+            events.add(sendEvent(name: "statusText", value: "Heating to ${temperature}°", displayed: false))
+            events.add(sendEvent(name: "thermostatOperatingState", value: "heating", displayed: false))
+            events.add(sendEvent(name: "heatingSetpoint", value: temperature, displayed: false))
+            events.add(sendEvent(name: "targetTemp", value: temperature))
             break
         case "cool":
-            sendEvent(name: "statusText", value: "Cooling to ${temperature}°", displayed: false)
-            sendEvent(name: "thermostatOperatingState", value: "cooling", displayed: false)
-            sendEvent(name: "coolingSetpoint", value: temperature, displayed: false)
-            sendEvent(name: "targetTemp", value: temperature)
+            events.add(sendEvent(name: "statusText", value: "Cooling to ${temperature}°", displayed: false))
+            events.add(sendEvent(name: "thermostatOperatingState", value: "cooling", displayed: false))
+            events.add(sendEvent(name: "coolingSetpoint", value: temperature, displayed: false))
+            events.add(sendEvent(name: "targetTemp", value: temperature))
             break
         case "auto":
-            sendEvent(name: "statusText", value: "Auto Mode: ${temperature}°", displayed: false)
-            sendEvent(name: "targetTemp", value: temperature)
+            events.add(sendEvent(name: "statusText", value: "Auto Mode: ${temperature}°", displayed: false))
+            events.add(sendEvent(name: "targetTemp", value: temperature))
             break
         case "off":
-            sendEvent(name: "statusText", value: "System is off", displayed: false)
+            events.add(sendEvent(name: "statusText", value: "System is off", displayed: false))
+            events.add(sendEvent(name: "thermostatOperatingState", value: "idle", displayed: false))
             turnOff = true
             break
     }
