@@ -1,6 +1,6 @@
 /**
  *  Daikin WiFi Split System
- *  V 1.2 - 07/01/2018
+ *  V 1.3 - 10/01/2018
  *
  *  Copyright 2018 Ben Dews - https://bendews.com
  *
@@ -19,6 +19,8 @@
  *  1.0 (06/01/2018) - Initial 1.0 Release. All Temperature, Mode and Fan functions working.
  *  1.1 (06/01/2018) - Allow user to change device icon.
  *  1.2 (07/01/2018) - Fixed issue preventing user from setting desired temperature, added switch and temperature capabilities
+ *  1.3 (10/01/2018) - Added support for outside temperature value, 1 minute refresh option (not reccomended) and fixed thermostat and switch state reporting when turned off
+ *
  *
  */
 
@@ -87,7 +89,7 @@ metadata {
     preferences {
         input("ipAddress", "string", title:"Daikin WiFi IP Address", required:true, displayDuringSetup:true)
         input("ipPort", "string", title:"Daikin WiFi Port (default: 80)", defaultValue:80, required:true, displayDuringSetup:true)
-        input("refreshInterval", "enum", title: "Refresh Interval in minutes", defaultValue: "10", required:true, displayDuringSetup:true, options: ["5","10","15","30"])
+        input("refreshInterval", "enum", title: "Refresh Interval in minutes", defaultValue: "10", required:true, displayDuringSetup:true, options: ["1","5","10","15","30"])
     }
 
     simulator {
@@ -178,8 +180,8 @@ metadata {
         }
 
         // Outside Temp
-		valueTile("outsideTemp", "device.outsideTemp", width:2, height:2, inactiveLabel: false) {
-			state("val", label:'Outside: ${currentValue}°', backgroundColors:[
+        valueTile("outsideTemp", "device.outsideTemp", width:2, height:2, inactiveLabel: false) {
+            state("val", label:'Outside: ${currentValue}°', backgroundColors:[
                 [value: 0, color: "#153591"],
                 [value: 7, color: "#1e9cbb"],
                 [value: 15, color: "#90d2a7"],
@@ -187,8 +189,8 @@ metadata {
                 [value: 28, color: "#f1d801"],
                 [value: 35, color: "#d04e00"],
                 [value: 37, color: "#bc2323"]
-				])
-		}
+                ])
+        }
 
         // Refresh       
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width:2, height:2) {
@@ -217,17 +219,18 @@ metadata {
 }
 
 // Generic Private Functions -------
-private generateDNI(String ipAddress, String port){
-    log.debug "Generating DNI"
-    String ipHex = ipAddress.tokenize( '.' ).collect {  String.format( '%02X', it.toInteger() ) }.join()
-    String portHex = String.format( '%04X', port.toInteger() )
-    return ipHex + ":" + portHex
-}
-
 private getHostAddress() {
     def ip = settings.ipAddress
     def port = settings.ipPort
     return ip + ":" + port
+}
+
+private getDNI(String ipAddress, String port){
+    log.debug "Generating DNI"
+    String ipHex = ipAddress.tokenize( '.' ).collect {  String.format( '%02X', it.toInteger() ) }.join()
+    String portHex = String.format( '%04X', port.toInteger() )
+    String newDNI = ipHex + ":" + portHex
+    return newDNI
 }
 
 private apiGet(def apiCommand) {
@@ -274,7 +277,9 @@ private updateDaikinDevice(Boolean turnOff = false){
     def fDir = "&f_dir=3"
 
     // Current mode selected in smartthings
-    def currentMode = device.currentState("thermostatMode")?.value
+    // If turning unit off, get current mode of unit instead of desired mode
+    String modeAttr = turnOff ? "currMode" : "thermostatMode"
+    def currentMode = device.currentState(modeAttr)?.value
     // Convert textual mode (e.g "cool") to Daikin Code (e.g "3")
     def currentModeKey = DAIKIN_MODES.find{ it.value == currentMode }?.key
 
@@ -338,30 +343,31 @@ private startScheduledRefresh() {
         minutes = 10
     }
     log.debug "Scheduling polling task for every '${minutes}' minutes"
-    refresh()
-    "runEvery${minutes}Minutes"(refresh)
+    if (minutes == 1){
+        runEvery1Minute(refresh)
+    } else {
+        "runEvery${minutes}Minutes"(refresh)
+    }
+}
+
+def setDNI(){
+    log.debug "Setting DNI"
+    String ip = settings.ipAddress
+    String port = settings.ipPort
+    String newDNI = getDNI(ip, port)
+    device.setDeviceNetworkId("${newDNI}")
 }
 
 def updated() {
     log.debug "Updated with settings: ${settings}"
-    def lastUpdated = state.updated ? state.updated : (now() - 6000)
     // Prevent function from running twice on save
-    if ((now() - lastUpdated) < 5000){
+    if (!state.updated || now() >= state.updated + 5000){
+        // Unschedule existing tasks
         unschedule()
-        String ipAddress = settings.ipAddress
-        if (!ipAddress) {
-            log.warn "IP address is not set!"
-            return
-        }
-        String ipPort = settings.ipPort
-        if (!ipPort) {
-            log.warn "Using default TCP port 80!"
-            ipPort = "80"
-        }
-        def dni = generateDNI(ipAddress, ipPort)
-        device.deviceNetworkId = dni
-        state.hostAddress = getHostAddress()
-        // Start scheduled refresh
+        // Set DNI
+        runIn(1, setDNI)
+        runIn(5, refresh)
+        // Start scheduled task
         startScheduledRefresh()
     }
     state.updated = now()
@@ -384,18 +390,18 @@ def refresh() {
 
 def installed() {
     log.debug "installed()"
-    sendEvent(name:'temperature', value:'20', displayed:false)
-    sendEvent(name:'heatingSetpoint', value:'18', displayed:false)
-    sendEvent(name:'coolingSetpoint', value:'28', displayed:false)
-    sendEvent(name:'targetTemp', value:'28', displayed:false)
-    sendEvent(name:'outsideTemp', value:'20', displayed:false)
-    sendEvent(name:'thermostatMode', value:'off', displayed:false)
-    sendEvent(name:'currMode', value:'cool', displayed:false)
-    sendEvent(name:'thermostatFanMode', value:'auto', displayed:false)
+    sendEvent(name:'heatingSetpoint', value: '18', displayed:false)
+    sendEvent(name:'coolingSetpoint', value: '28', displayed:false)
+    sendEvent(name:'temperature', value: null, displayed:false)
+    sendEvent(name:'targetTemp', value: null, displayed:false)
     sendEvent(name:'thermostatOperatingState', value:'idle', displayed:false)
-    sendEvent(name:'fanRate', value:'auto', displayed:false)
-    sendEvent(name:'fanDirection', value:'3D', displayed:false)
-    sendEvent(name:'fanState', value:'off', displayed:false)
+    sendEvent(name:'outsideTemp', value: null, displayed:false)
+    sendEvent(name:'currMode', value: null, displayed:false)
+    sendEvent(name:'thermostatMode', value: null, displayed:false)
+    sendEvent(name:'thermostatFanMode', value: null, displayed:false)
+    sendEvent(name:'fanRate', value: null, displayed:false)
+    sendEvent(name:'fanDirection', value: null, displayed:false)
+    sendEvent(name:'fanState', value: null, displayed:false)
 }
 // -------
 
@@ -492,45 +498,53 @@ private updateEvents(Map args){
     // Smarthings thermostat handles "Off" as another mode
     // Work around this by defining a "turnOff" boolean and set where appropiate
     Boolean turnOff = false
+    def events = []
     if (!mode){
         mode = device.currentValue("thermostatMode")
     } else {
-        sendEvent(name: "thermostatMode", value: mode)
+        events.add(sendEvent(name: "thermostatMode", value: mode))
     }
     if (!temperature){
         temperature = device.currentValue("targetTemp")
     }
     switch(mode) {
         case "fan":
-            sendEvent(name: "statusText", value: "Fan Mode", displayed: false)
-            sendEvent(name: "thermostatOperatingState", value: "fan only", displayed: false)
-            sendEvent(name: "targetTemp", value: null)
+            events.add(sendEvent(name: "statusText", value: "Fan Mode", displayed: false))
+            events.add(sendEvent(name: "thermostatOperatingState", value: "fan only", displayed: false))
+            events.add(sendEvent(name: "targetTemp", value: null))
             break
         case "dry":
-            sendEvent(name: "statusText", value: "Dry Mode", displayed: false)
-            sendEvent(name: "thermostatOperatingState", value: "fan only", displayed: false)
-            sendEvent(name: "targetTemp", value: null)
+            events.add(sendEvent(name: "statusText", value: "Dry Mode", displayed: false))
+            events.add(sendEvent(name: "thermostatOperatingState", value: "fan only", displayed: false))
+            events.add(sendEvent(name: "targetTemp", value: null))
             break
         case "heat":
-            sendEvent(name: "statusText", value: "Heating to ${temperature}°", displayed: false)
-            sendEvent(name: "thermostatOperatingState", value: "heating", displayed: false)
-            sendEvent(name: "heatingSetpoint", value: temperature, displayed: false)
-            sendEvent(name: "targetTemp", value: temperature)
+            events.add(sendEvent(name: "statusText", value: "Heating to ${temperature}°", displayed: false))
+            events.add(sendEvent(name: "thermostatOperatingState", value: "heating", displayed: false))
+            events.add(sendEvent(name: "heatingSetpoint", value: temperature, displayed: false))
+            events.add(sendEvent(name: "targetTemp", value: temperature))
             break
         case "cool":
-            sendEvent(name: "statusText", value: "Cooling to ${temperature}°", displayed: false)
-            sendEvent(name: "thermostatOperatingState", value: "cooling", displayed: false)
-            sendEvent(name: "coolingSetpoint", value: temperature, displayed: false)
-            sendEvent(name: "targetTemp", value: temperature)
+            events.add(sendEvent(name: "statusText", value: "Cooling to ${temperature}°", displayed: false))
+            events.add(sendEvent(name: "thermostatOperatingState", value: "cooling", displayed: false))
+            events.add(sendEvent(name: "coolingSetpoint", value: temperature, displayed: false))
+            events.add(sendEvent(name: "targetTemp", value: temperature))
             break
         case "auto":
-            sendEvent(name: "statusText", value: "Auto Mode: ${temperature}°", displayed: false)
-            sendEvent(name: "targetTemp", value: temperature)
+            events.add(sendEvent(name: "statusText", value: "Auto Mode: ${temperature}°", displayed: false))
+            events.add(sendEvent(name: "targetTemp", value: temperature))
             break
         case "off":
-            sendEvent(name: "statusText", value: "System is off", displayed: false)
+            events.add(sendEvent(name: "statusText", value: "System is off", displayed: false))
+            events.add(sendEvent(name: "thermostatOperatingState", value: "idle", displayed: false))
             turnOff = true
             break
+    }
+
+    if (turnOff){
+        events.add(sendEvent(name: "switch", value: "off", displayed: false))
+    } else {
+        events.add(sendEvent(name: "switch", value: "on", displayed: false))
     }
 
     if (updateDevice){
