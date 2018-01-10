@@ -217,17 +217,18 @@ metadata {
 }
 
 // Generic Private Functions -------
-private generateDNI(String ipAddress, String port){
-    log.debug "Generating DNI"
-    String ipHex = ipAddress.tokenize( '.' ).collect {  String.format( '%02X', it.toInteger() ) }.join()
-    String portHex = String.format( '%04X', port.toInteger() )
-    return ipHex + ":" + portHex
-}
-
 private getHostAddress() {
     def ip = settings.ipAddress
     def port = settings.ipPort
     return ip + ":" + port
+}
+
+private getDNI(String ipAddress, String port){
+    log.debug "Generating DNI"
+    String ipHex = ipAddress.tokenize( '.' ).collect {  String.format( '%02X', it.toInteger() ) }.join()
+    String portHex = String.format( '%04X', port.toInteger() )
+    String newDNI = ipHex + ":" + portHex
+    return newDNI
 }
 
 private apiGet(def apiCommand) {
@@ -347,26 +348,24 @@ private startScheduledRefresh() {
     }
 }
 
+def setDNI(){
+    log.debug "Setting DNI"
+    String ip = settings.ipAddress
+    String port = settings.ipPort
+    String newDNI = getDNI(ip, port)
+    device.setDeviceNetworkId("${newDNI}")
+}
+
 def updated() {
     log.debug "Updated with settings: ${settings}"
-    def lastUpdated = state.updated ? state.updated : (now() - 6000)
     // Prevent function from running twice on save
-    if ((now() - lastUpdated) < 5000){
+    if (!state.updated || now() >= state.updated + 5000){
+        // Unschedule existing tasks
         unschedule()
-        String ipAddress = settings.ipAddress
-        if (!ipAddress) {
-            log.warn "IP address is not set!"
-            return
-        }
-        String ipPort = settings.ipPort
-        if (!ipPort) {
-            log.warn "Using default TCP port 80!"
-            ipPort = "80"
-        }
-        def dni = generateDNI(ipAddress, ipPort)
-        device.deviceNetworkId = dni
-        state.hostAddress = getHostAddress()
-        // Start scheduled refresh
+        // Set DNI
+        runIn(1, setDNI)
+        runIn(5, refresh)
+        // Start scheduled task
         startScheduledRefresh()
     }
     state.updated = now()
