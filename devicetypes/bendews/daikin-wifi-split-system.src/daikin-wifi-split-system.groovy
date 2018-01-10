@@ -87,7 +87,7 @@ metadata {
     preferences {
         input("ipAddress", "string", title:"Daikin WiFi IP Address", required:true, displayDuringSetup:true)
         input("ipPort", "string", title:"Daikin WiFi Port (default: 80)", defaultValue:80, required:true, displayDuringSetup:true)
-        input("refreshInterval", "enum", title: "Refresh Interval in minutes", defaultValue: "10", required:true, displayDuringSetup:true, options: ["5","10","15","30"])
+        input("refreshInterval", "enum", title: "Refresh Interval in minutes", defaultValue: "10", required:true, displayDuringSetup:true, options: ["1","5","10","15","30"])
     }
 
     simulator {
@@ -338,8 +338,11 @@ private startScheduledRefresh() {
         minutes = 10
     }
     log.debug "Scheduling polling task for every '${minutes}' minutes"
-    refresh()
-    "runEvery${minutes}Minutes"(refresh)
+    if (minutes == 1){
+        runEvery1Minute(refresh)
+    } else {
+        "runEvery${minutes}Minutes"(refresh)
+    }
 }
 
 def updated() {
