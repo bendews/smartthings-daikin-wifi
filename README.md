@@ -13,11 +13,11 @@ Note that "P" Series units (FTXMxxP) do not support fan direction or rate contro
 - Ability to set desired temperature
 - Ability to set desired mode (Auto, Cool, Heat, Dry, Fan)
 - Seperate temperatures for each mode
-- See current environment temperature
+- See indoor environment temperature
+- See outdoor environment temperature
 - Adjustment of fan direction (Horizontal, Vertical and "3D")
 - Adjustment of fan rate (0-5, Auto, Silence)
-
-Future revisions will also add a parameter for viewing the outside temperature
+- Fahrenheit and Celsius support
 
 ## To Install
 
@@ -50,6 +50,7 @@ Once created, we can then open the settings for the device, and fill out the fol
 - **Daikin WiFi IP Address:** The IP address of the WiFi unit
 - **Daikin WiFi Port:** Ensure this is set to 80 if you are not sure
 - **Refresh Interval in minutes:** The device will refresh automatically when tasks are triggered by SmartThings, however if it is being controlled by other means (I.E a remote), the state will go out of sync. This setting will refresh the device information on a set interval. 10 minutes or higher is strongly recommended.
+- **Display Fahrenheit:** If toggled temperature values will be displayed in Fahrenheit
 
 # License
 [MIT](https://github.com/bendews/smartthings-daikin-wifi/master/LICENSE)
