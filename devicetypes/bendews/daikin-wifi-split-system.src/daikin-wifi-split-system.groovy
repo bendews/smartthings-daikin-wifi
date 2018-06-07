@@ -247,6 +247,21 @@ private apiGet(def apiCommand) {
     return hubAction
 }
 
+private roundHalf(Double num){
+    return ((num * 2).round() / 2)
+}
+
+private convertTemp(Double temp, Boolean isFahrenheit){
+    log.debug "Converting ${temp}, Fahrenheit: ${isFahrenheit}"
+    Double convertedTemp
+    if (isFahrenheit) {
+        convertedTemp = ((temp - 32) * 5) / 9
+        return convertedTemp.round()
+    }
+    convertedTemp = ((temp * 9) / 5) + 32
+    return convertedTemp.round()
+}
+
 private delayAction(long time) {
     log.debug "Delay for '${time}'"
     new physicalgraph.device.HubAction("delay $time")
