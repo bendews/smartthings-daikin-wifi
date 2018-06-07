@@ -323,7 +323,7 @@ private updateDaikinDevice(Boolean turnOff = false){
     log.debug "${currentfDirKey}"
     
     // Get target temperature set in Smartthings
-    def targetTemp = device.currentValue("targetTemp")
+    def targetTemp = parseTemp(device.currentValue("targetTemp"), "SET")
 
     // Set power mode in HTTP call
     if (turnOff) {
@@ -477,18 +477,20 @@ def parse(String description) {
     //  Get inside temperature sensor info
     if (deviceInsideTempSensor){
         // log.debug "htemp: ${deviceInsideTempSensor}"
-        events.add(createEvent(name: "temperature", value: deviceInsideTempSensor))
+        String insideTemp = parseTemp(Double.parseDouble(deviceInsideTempSensor), "GET")
+        events.add(createEvent(name: "temperature", value: insideTemp))
     }
     //  Get outside temperature sensor info
     if (deviceOutsideTempSensor){
         // log.debug "otemp: ${deviceOutsideTempSensor}"
-        events.add(createEvent(name: "outsideTemp", value: deviceOutsideTempSensor))
+        String outsideTemp = parseTemp(Double.parseDouble(deviceOutsideTempSensor), "GET")
+        events.add(createEvent(name: "outsideTemp", value: outsideTemp))
     }
     //  Get currently set target temperature
     if (deviceTargetTemp){
         // log.debug "stemp: ${deviceTargetTemp}"
         // Value of "M" is for modes that don't support temperature changes, make value null
-        targetTempVal = deviceTargetTemp == "M" ? null : deviceTargetTemp
+        targetTempVal = deviceTargetTemp.isNumber() ? parseTemp(Double.parseDouble(deviceTargetTemp), "GET") : null
     }
     //  Get current fan rate
     if (devicefanRate){
