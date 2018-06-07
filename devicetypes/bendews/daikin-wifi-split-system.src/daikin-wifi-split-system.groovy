@@ -1,6 +1,6 @@
 /**
  *  Daikin WiFi Split System
- *  V 1.3 - 10/01/2018
+ *  V 1.4 - 07/06/2018
  *
  *  Copyright 2018 Ben Dews - https://bendews.com
  *
@@ -20,7 +20,7 @@
  *  1.1 (06/01/2018) - Allow user to change device icon.
  *  1.2 (07/01/2018) - Fixed issue preventing user from setting desired temperature, added switch and temperature capabilities
  *  1.3 (10/01/2018) - Added support for outside temperature value, 1 minute refresh option (not reccomended) and fixed thermostat and switch state reporting when turned off
- *
+ *  1.4 (07/06/2018) - Added Fahrenheit support
  *
  */
 
@@ -90,6 +90,7 @@ metadata {
         input("ipAddress", "string", title:"Daikin WiFi IP Address", required:true, displayDuringSetup:true)
         input("ipPort", "string", title:"Daikin WiFi Port (default: 80)", defaultValue:80, required:true, displayDuringSetup:true)
         input("refreshInterval", "enum", title: "Refresh Interval in minutes", defaultValue: "10", required:true, displayDuringSetup:true, options: ["1","5","10","15","30"])
+        input("displayFahrenheit", "boolean", title: "Display Fahrenheit", defaultValue: false, displayDuringSetup:true)
     }
 
     simulator {
@@ -109,7 +110,15 @@ metadata {
                 [value: 23, color: "#44b621"],
                 [value: 28, color: "#f1d801"],
                 [value: 35, color: "#d04e00"],
-                [value: 37, color: "#bc2323"]
+                [value: 37, color: "#bc2323"],
+                // Fahrenheit
+				[value: 40, color: "#153591"],
+				[value: 44, color: "#1e9cbb"],
+				[value: 59, color: "#90d2a7"],
+				[value: 74, color: "#44b621"],
+				[value: 82, color: "#f1d801"],
+				[value: 95, color: "#d04e00"],
+				[value: 98, color: "#bc2323"]
                 ])
             }
 
@@ -182,13 +191,22 @@ metadata {
         // Outside Temp
         valueTile("outsideTemp", "device.outsideTemp", width:2, height:2, inactiveLabel: false) {
             state("val", label:'Outside: ${currentValue}°', backgroundColors:[
+                // Celsius
                 [value: 0, color: "#153591"],
                 [value: 7, color: "#1e9cbb"],
                 [value: 15, color: "#90d2a7"],
                 [value: 23, color: "#44b621"],
                 [value: 28, color: "#f1d801"],
                 [value: 35, color: "#d04e00"],
-                [value: 37, color: "#bc2323"]
+                [value: 37, color: "#bc2323"],
+                // Fahrenheit
+				[value: 40, color: "#153591"],
+				[value: 44, color: "#1e9cbb"],
+				[value: 59, color: "#90d2a7"],
+				[value: 74, color: "#44b621"],
+				[value: 82, color: "#f1d801"],
+				[value: 95, color: "#d04e00"],
+				[value: 98, color: "#bc2323"]
                 ])
         }
 
@@ -246,6 +264,21 @@ private apiGet(def apiCommand) {
     return hubAction
 }
 
+private roundHalf(Double num){
+    return ((num * 2).round() / 2)
+}
+
+private convertTemp(Double temp, Boolean isFahrenheit){
+    log.debug "Converting ${temp}, Fahrenheit: ${isFahrenheit}"
+    Double convertedTemp
+    if (isFahrenheit) {
+        convertedTemp = ((temp - 32) * 5) / 9
+        return convertedTemp.round()
+    }
+    convertedTemp = ((temp * 9) / 5) + 32
+    return convertedTemp.round()
+}
+
 private delayAction(long time) {
     log.debug "Delay for '${time}'"
     new physicalgraph.device.HubAction("delay $time")
@@ -254,6 +287,18 @@ private delayAction(long time) {
 
 
 // Daikin Specific Private Functions -------
+private parseTemp(Double temp, String method){
+    log.debug "${method}-ing ${temp}"
+    if (settings.displayFahrenheit.toBoolean()) {
+        switch(method) {
+            case "GET":
+                return convertTemp(temp, false)
+            case "SET":
+                return convertTemp(temp, true)
+        }
+    }
+    return temp
+}
 private parseDaikinResp(String response) {
     // Convert Daikin response to Groovy Map
     // Convert to JSON
@@ -295,7 +340,7 @@ private updateDaikinDevice(Boolean turnOff = false){
     log.debug "${currentfDirKey}"
     
     // Get target temperature set in Smartthings
-    def targetTemp = device.currentValue("targetTemp")
+    def targetTemp = parseTemp(device.currentValue("targetTemp"), "SET")
 
     // Set power mode in HTTP call
     if (turnOff) {
@@ -449,18 +494,20 @@ def parse(String description) {
     //  Get inside temperature sensor info
     if (deviceInsideTempSensor){
         // log.debug "htemp: ${deviceInsideTempSensor}"
-        events.add(createEvent(name: "temperature", value: deviceInsideTempSensor))
+        String insideTemp = parseTemp(Double.parseDouble(deviceInsideTempSensor), "GET")
+        events.add(createEvent(name: "temperature", value: insideTemp))
     }
     //  Get outside temperature sensor info
     if (deviceOutsideTempSensor){
         // log.debug "otemp: ${deviceOutsideTempSensor}"
-        events.add(createEvent(name: "outsideTemp", value: deviceOutsideTempSensor))
+        String outsideTemp = parseTemp(Double.parseDouble(deviceOutsideTempSensor), "GET")
+        events.add(createEvent(name: "outsideTemp", value: outsideTemp))
     }
     //  Get currently set target temperature
     if (deviceTargetTemp){
         // log.debug "stemp: ${deviceTargetTemp}"
         // Value of "M" is for modes that don't support temperature changes, make value null
-        targetTempVal = deviceTargetTemp == "M" ? null : deviceTargetTemp
+        targetTempVal = deviceTargetTemp.isNumber() ? parseTemp(Double.parseDouble(deviceTargetTemp), "GET") : null
     }
     //  Get current fan rate
     if (devicefanRate){
