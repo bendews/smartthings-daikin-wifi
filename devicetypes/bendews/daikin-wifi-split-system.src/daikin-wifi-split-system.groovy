@@ -270,6 +270,18 @@ private delayAction(long time) {
 
 
 // Daikin Specific Private Functions -------
+private parseTemp(Double temp, String method){
+    log.debug "${method}-ing ${temp}"
+    if (settings.displayFahrenheit.toBoolean()) {
+        switch(method) {
+            case "GET":
+                return convertTemp(temp, false)
+            case "SET":
+                return convertTemp(temp, true)
+        }
+    }
+    return temp
+}
 private parseDaikinResp(String response) {
     // Convert Daikin response to Groovy Map
     // Convert to JSON
