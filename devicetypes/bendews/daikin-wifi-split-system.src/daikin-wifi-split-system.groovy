@@ -90,6 +90,7 @@ metadata {
         input("ipAddress", "string", title:"Daikin WiFi IP Address", required:true, displayDuringSetup:true)
         input("ipPort", "string", title:"Daikin WiFi Port (default: 80)", defaultValue:80, required:true, displayDuringSetup:true)
         input("refreshInterval", "enum", title: "Refresh Interval in minutes", defaultValue: "10", required:true, displayDuringSetup:true, options: ["1","5","10","15","30"])
+        input("displayFahrenheit", "boolean", title: "Display Fahrenheit", defaultValue: false, displayDuringSetup:true)
     }
 
     simulator {
