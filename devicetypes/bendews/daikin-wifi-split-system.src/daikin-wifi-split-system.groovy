@@ -258,7 +258,7 @@ private apiGet(def apiCommand) {
     def hubAction = new physicalgraph.device.HubAction(
         method: "GET",
         path: apiCommand,
-        headers: [HOST:getHostAddress()]
+        headers: [Host:getHostAddress()]
     )
 
     return hubAction
