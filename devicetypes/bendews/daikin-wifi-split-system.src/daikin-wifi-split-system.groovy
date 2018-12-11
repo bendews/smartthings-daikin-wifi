@@ -1,6 +1,6 @@
 /**
  *  Daikin WiFi Split System
- *  V 1.4 - 07/06/2018
+ *  V 1.4.1 - 11/12/2018
  *
  *  Copyright 2018 Ben Dews - https://bendews.com
  *
@@ -16,11 +16,12 @@
  *
  *	Changelog:
  *
- *  1.0 (06/01/2018) - Initial 1.0 Release. All Temperature, Mode and Fan functions working.
- *  1.1 (06/01/2018) - Allow user to change device icon.
- *  1.2 (07/01/2018) - Fixed issue preventing user from setting desired temperature, added switch and temperature capabilities
- *  1.3 (10/01/2018) - Added support for outside temperature value, 1 minute refresh option (not reccomended) and fixed thermostat and switch state reporting when turned off
- *  1.4 (07/06/2018) - Added Fahrenheit support
+ *  1.0     (06/01/2018) - Initial 1.0 Release. All Temperature, Mode and Fan functions working.
+ *  1.1     (06/01/2018) - Allow user to change device icon.
+ *  1.2     (07/01/2018) - Fixed issue preventing user from setting desired temperature, added switch and temperature capabilities
+ *  1.3     (10/01/2018) - Added support for outside temperature value, 1 minute refresh option (not reccomended) and fixed thermostat and switch state reporting when turned off
+ *  1.4     (07/06/2018) - Added Fahrenheit support
+ *  1.4.1   (11/12/2018) - Implemented fix for B-type adapters ('Host' header case) - Big thanks to @WGentine in the SmartThings community
  *
  */
 
