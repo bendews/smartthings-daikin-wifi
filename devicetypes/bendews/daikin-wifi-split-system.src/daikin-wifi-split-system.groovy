@@ -3,6 +3,7 @@
  *  V 1.4.1 - 11/12/2018
  *
  *  Copyright 2018 Ben Dews - https://bendews.com
+ *  Contribution by RBoy Apps
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -721,18 +722,29 @@ def setFanRate(def fanRate) {
     def currFanRate = device.currentValue("fanRate")
     // Check that rate is different before setting.
     // TODO: Clean messy IF statements
-    if (currFanRate != fanRate){
-        if (fanRate == 0){
-            sendEvent(name: "fanRate", value: "Auto")
-        } else {
-            sendEvent(name: "fanRate", value: fanRate)
-        }
-        if (fanAPISupported()){
-            updateDaikinDevice(false)
-        } else {
-            sendEvent(name: "fanRate", value: "Not Supported")
-        }
-    }
+	if (currFanRate != fanRate){
+		if (fanAPISupported()){
+			sendEvent(name: "supportedThermostatFanModes", value: ["auto", "on"], displayed: false) // We don't support circulate at this time
+			if (fanRate == 0){
+				sendEvent(name: "fanRate", value: "Auto")
+				sendEvent(name: "thermostatFanMode", value: "auto", displayed: false)
+			} else {
+				sendEvent(name: "fanRate", value: fanRate)
+				switch (fanRate) {
+					case "Auto":
+						sendEvent(name: "thermostatFanMode", value: "auto", displayed: false)
+						break
+
+					default: // all other modes indicate fan on
+						sendEvent(name: "thermostatFanMode", value: "on", displayed: false)
+						break
+				}
+			}
+			updateDaikinDevice(false)
+		} else {
+			sendEvent(name: "fanRate", value: "Not Supported")
+		}
+	}
 }
 
 def fanRateAuto(){
@@ -783,25 +795,40 @@ def fanDirectionVertical() {
 
 def fanOn() {
     log.debug "Executing 'fanOn'"
-    updateEvents(mode: "fan", updateDevice: true)
+    fanRateSilence() // Should this be made configurable to allow the user to select the default fan rate?
 }
 
 def fanAuto() {
     log.debug "Executing 'fanAuto'"
-    sendEvent(name: "fanRate", value: "Auto")
-    updateEvents(mode: "fan", updateDevice: true)
+	fanRateAuto()
 }
 
 // TODO: Implement these functions if possible
-// def fanCirculate() {
-    // log.debug "Executing 'fanCirculate'"
+ def fanCirculate() {
+    log.warn "Executing 'fanCirculate' not currently supported"
     // TODO: handle 'fanCirculate' command
-// }
+ }
 
-// def setThermostatFanMode() {
-    // log.debug "Executing 'setThermostatFanMode'"
-    // TODO: handle 'setThermostatFanMode' command
-// }
+ def setThermostatFanMode(String value) {
+    log.debug "Executing 'setThermostatFanMode' with fan mode $value"
+	switch(value){
+		case "auto":
+			fanAuto()
+			break
+		
+		case "on":
+			fanOn()
+			break
+		
+		case "circulate":
+			fanCirculate()
+			break
+		
+		default:
+			log.warn "Unknown fan mode: $value"
+			break
+	}
+ }
 
 // def setSchedule() {
     // log.debug "Executing 'setSchedule'"
